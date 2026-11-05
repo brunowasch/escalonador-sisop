@@ -2,7 +2,7 @@ FROM gcc:latest
 
 WORKDIR /app
 
-COPY . .
+COPY /src/* .
 
 RUN gcc main.c -o escalonador
 
