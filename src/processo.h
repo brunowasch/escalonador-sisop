@@ -43,11 +43,11 @@ typedef enum {
 typedef struct {
     int pid;                    // Identificador único do processo.
     int ppid;                   // Identificador do processo pai.
-    EstadoProcesso estado;      // Estado atual do processo.
-    Prioridade prioridade;      // Prioridade atual do processo.
-    int tempo_restante;         // Tempo de CPU restante para execução.
-    DispositivoIO proximo_io;   // Próximo dispositivo de E/S.
-    int tempo_io;               // Duração da próxima operação de E/S.
+    EstadoProcesso estado;       // Estado atual do processo.
+    Prioridade prioridade;       // Prioridade atual do processo.
+    int tempo_restante;          // Tempo de CPU restante para execução.
+    DispositivoIO proximo_io;    // Próximo dispositivo de E/S.
+    int tempo_io;                // Duração da próxima operação de E/S.
 } PCB;
 
 /*
@@ -58,6 +58,9 @@ typedef struct {
  * tempo_restante: tempo total de execução necessário.
  * proximo_io: dispositivo da próxima operação de E/S.
  * tempo_io: duração da próxima operação de E/S.
+ *
+ * Retorna 1 se o processo foi criado com sucesso.
+ * Retorna 0 se algum parâmetro for inválido.
  */
 int criar_processo(
     PCB *processo,
@@ -97,7 +100,6 @@ void atualizar_prioridade(PCB *processo, Prioridade nova_prioridade);
  * tempo_executado: quantidade de tempo de CPU já utilizada pelo processo.
  */
 void atualizar_tempo_restante(PCB *processo, int tempo_executado);
-
 
 // Indica o fim do include guard iniciado pelo #ifndef PROCESSO_H.
 #endif

@@ -1,9 +1,47 @@
+
 #include <stdio.h>
+#include <limits.h>
 #include "processo.h"
 
 // Contador estático utilizado para gerar PIDs sequenciais.
 // Inicia em 1 e mantém seu valor entre chamadas da função.
 static int proximo_pid = 1;
+
+/*
+ * Verifica se um estado informado pertence ao enum EstadoProcesso.
+ *
+ * estado: estado que será validado.
+ *
+ * Retorna 1 se o estado for válido.
+ * Retorna 0 se o estado for inválido.
+ */
+static int estado_valido(EstadoProcesso estado) {
+    return estado >= NOVO && estado <= FINALIZADO;
+}
+
+/*
+ * Verifica se uma prioridade informada pertence ao enum Prioridade.
+ *
+ * prioridade: prioridade que será validada.
+ *
+ * Retorna 1 se a prioridade for válida.
+ * Retorna 0 se a prioridade for inválida.
+ */
+static int prioridade_valida(Prioridade prioridade) {
+    return prioridade == ALTA || prioridade == BAIXA;
+}
+
+/*
+ * Verifica se um dispositivo informado pertence ao enum DispositivoIO.
+ *
+ * dispositivo: dispositivo que será validado.
+ *
+ * Retorna 1 se o dispositivo for válido.
+ * Retorna 0 se o dispositivo for inválido.
+ */
+static int dispositivo_valido(DispositivoIO dispositivo) {
+    return dispositivo >= NENHUM && dispositivo <= IMPRESSORA;
+}
 
 /*
  * Inicializa um PCB com os dados de um novo processo.
@@ -30,15 +68,45 @@ int criar_processo(
         return 0;
     }
 
+    // Valida o identificador do processo pai.
+    if (ppid < 0) {
+        printf("Erro: PPID não pode ser negativo.\n");
+        return 0;
+    }
+
     // Valida o tempo necessário para execução do processo.
     if (tempo_restante <= 0) {
         printf("Erro: tempo restante deve ser maior que zero.\n");
         return 0;
     }
 
+    // Valida se o dispositivo de E/S informado existe.
+    if (!dispositivo_valido(proximo_io)) {
+        printf("Erro: dispositivo de E/S inválido.\n");
+        return 0;
+    }
+
     // Valida a duração da operação de E/S.
     if (tempo_io < 0) {
         printf("Erro: tempo de I/O não pode ser negativo.\n");
+        return 0;
+    }
+
+    // Verifica se a ausência de E/S corresponde a uma duração zero.
+    if (proximo_io == NENHUM && tempo_io != 0) {
+        printf("Erro: processo sem E/S deve possuir tempo de I/O igual a zero.\n");
+        return 0;
+    }
+
+    // Verifica se uma operação de E/S possui duração positiva.
+    if (proximo_io != NENHUM && tempo_io == 0) {
+        printf("Erro: operação de E/S deve possuir duração maior que zero.\n");
+        return 0;
+    }
+
+    // Impede o overflow do contador de PID.
+    if (proximo_pid == INT_MAX) {
+        printf("Erro: limite de PIDs atingido.\n");
         return 0;
     }
 
@@ -60,16 +128,26 @@ int criar_processo(
     return 1;
 }
 
-
 /*
  * Exibe no terminal todos os atributos de um processo.
  *
  * processo: ponteiro para o PCB cujos dados serão apresentados.
+ *
+ * Retorna sem exibir os dados se o ponteiro do PCB for inválido
+ * ou se algum atributo enumérico possuir valor inválido.
  */
 void mostrar_processo(PCB *processo) {
     // Verifica se o ponteiro do PCB é válido.
     if (processo == NULL) {
         printf("Erro: PCB inválido.\n");
+        return;
+    }
+
+    // Valida os atributos enuméricos antes de exibi-los.
+    if (!estado_valido(processo->estado) ||
+        !prioridade_valida(processo->prioridade) ||
+        !dispositivo_valido(processo->proximo_io)) {
+        printf("Erro: PCB possui atributos inválidos.\n");
         return;
     }
 
@@ -121,7 +199,9 @@ void mostrar_processo(PCB *processo) {
  * processo: ponteiro para o PCB cujo estado será atualizado.
  * novo_estado: novo estado que será atribuído ao processo.
  *
- * Retorna sem atualizar o estado se o ponteiro do PCB for inválido.
+ * Valida o estado informado e a transição entre estados.
+ * Retorna sem atualizar o estado se algum parâmetro for inválido
+ * ou se a transição não for permitida.
  */
 void atualizar_estado(PCB *processo, EstadoProcesso novo_estado) {
     // Verifica se o ponteiro do PCB é válido.
@@ -129,10 +209,65 @@ void atualizar_estado(PCB *processo, EstadoProcesso novo_estado) {
         printf("Erro: PCB inválido.\n");
         return;
     }
+
+    // Verifica se o estado atual do processo é válido.
+    if (!estado_valido(processo->estado)) {
+        printf("Erro: estado atual do processo inválido.\n");
+        return;
+    }
+
+    // Verifica se o novo estado pertence ao enum.
+    if (!estado_valido(novo_estado)) {
+        printf("Erro: novo estado inválido.\n");
+        return;
+    }
+
+    // Impede alterações em processos finalizados.
+    if (processo->estado == FINALIZADO) {
+        printf("Erro: processo finalizado não pode ser alterado.\n");
+        return;
+    }
+
+    // Verifica se a transição de estado é permitida.
+    switch (processo->estado) {
+        case NOVO:
+            if (novo_estado != PRONTO) {
+                printf("Erro: processo NOVO só pode passar para PRONTO.\n");
+                return;
+            }
+            break;
+
+        case PRONTO:
+            if (novo_estado != EXECUTANDO) {
+                printf("Erro: processo PRONTO só pode passar para EXECUTANDO.\n");
+                return;
+            }
+            break;
+
+        case EXECUTANDO:
+            if (novo_estado != PRONTO && novo_estado != BLOQUEADO) {
+                printf("Erro: transição de estado inválida.\n");
+                return;
+            }
+            break;
+
+        case BLOQUEADO:
+            if (novo_estado != PRONTO) {
+                printf("Erro: processo BLOQUEADO só pode passar para PRONTO.\n");
+                return;
+            }
+            break;
+
+        case FINALIZADO:
+            return;
+    }
+
+    // Atualiza o estado após validar a transição.
     processo->estado = novo_estado;
+
+    // Exibe uma mensagem confirmando a atualização.
     printf("PID %d: Estado atualizado com sucesso!\n", processo->pid);
 }
-
 
 /*
  * Atualiza a prioridade de um processo.
@@ -140,7 +275,8 @@ void atualizar_estado(PCB *processo, EstadoProcesso novo_estado) {
  * processo: ponteiro para o PCB cuja prioridade será atualizada.
  * nova_prioridade: nova prioridade que será atribuída ao processo.
  *
- * Retorna sem atualizar a prioridade se o ponteiro do PCB for inválido.
+ * Retorna sem atualizar a prioridade se o ponteiro do PCB,
+ * a prioridade informada ou o estado do processo forem inválidos.
  */
 void atualizar_prioridade(PCB *processo, Prioridade nova_prioridade) {
     // Verifica se o ponteiro do PCB é válido.
@@ -148,10 +284,25 @@ void atualizar_prioridade(PCB *processo, Prioridade nova_prioridade) {
         printf("Erro: PCB inválido.\n");
         return;
     }
+
+    // Verifica se a prioridade informada é válida.
+    if (!prioridade_valida(nova_prioridade)) {
+        printf("Erro: prioridade inválida.\n");
+        return;
+    }
+
+    // Impede alterações em processos finalizados.
+    if (processo->estado == FINALIZADO) {
+        printf("Erro: processo finalizado não pode ter prioridade alterada.\n");
+        return;
+    }
+
+    // Atualiza a prioridade após validar os parâmetros.
     processo->prioridade = nova_prioridade;
+
+    // Exibe uma mensagem confirmando a atualização.
     printf("PID %d: Prioridade atualizada com sucesso!\n", processo->pid);
 }
-
 
 /*
  * Atualiza o tempo restante de execução de um processo.
@@ -160,10 +311,13 @@ void atualizar_prioridade(PCB *processo, Prioridade nova_prioridade) {
  * tempo_executado: quantidade de tempo de CPU já utilizada pelo processo.
  *
  * Subtrai o tempo executado do tempo restante quando o valor informado
- * é válido, ou seja, maior que zero e menor ou igual ao tempo restante.
+ * é válido e o processo está no estado EXECUTANDO.
  *
- * Retorna sem atualizar o tempo restante se o ponteiro do PCB for inválido
- * ou se o tempo executado for inválido.
+ * Finaliza automaticamente o processo quando seu tempo restante
+ * chega a zero.
+ *
+ * Retorna sem atualizar o tempo restante se o ponteiro do PCB,
+ * o estado do processo ou o tempo executado forem inválidos.
  */
 void atualizar_tempo_restante(PCB *processo, int tempo_executado) {
     // Verifica se o ponteiro do PCB é válido.
@@ -171,9 +325,35 @@ void atualizar_tempo_restante(PCB *processo, int tempo_executado) {
         printf("Erro: PCB inválido.\n");
         return;
     }
-    if (tempo_executado > 0 && tempo_executado <= processo->tempo_restante) {
-        processo->tempo_restante = processo->tempo_restante - tempo_executado;
-        printf("PID %d: Tempo restante atualizado com sucesso!\n", processo->pid);
-    } else 
-        printf("Tempo executado inválido.\n");
+
+    // Verifica se o processo está em execução.
+    if (processo->estado != EXECUTANDO) {
+        printf("Erro: somente processos EXECUTANDO podem consumir tempo de CPU.\n");
+        return;
+    }
+
+    // Verifica se o tempo executado é positivo.
+    if (tempo_executado <= 0) {
+        printf("Erro: tempo executado deve ser maior que zero.\n");
+        return;
+    }
+
+    // Verifica se o tempo executado não ultrapassa o tempo restante.
+    if (tempo_executado > processo->tempo_restante) {
+        printf("Erro: tempo executado excede o tempo restante.\n");
+        return;
+    }
+
+    // Subtrai o tempo executado do tempo restante.
+    processo->tempo_restante -= tempo_executado;
+
+    // Finaliza o processo quando não há mais tempo de CPU.
+    if (processo->tempo_restante == 0) {
+        processo->estado = FINALIZADO;
+        printf("PID %d: Processo finalizado!\n", processo->pid);
+        return;
+    }
+
+    // Exibe uma mensagem confirmando a atualização.
+    printf("PID %d: Tempo restante atualizado com sucesso!\n", processo->pid);
 }
