@@ -23,8 +23,8 @@ Este projeto é um simulador de escalonamento de processos, implementando a estr
 ## Como executar o projeto
 ```bash
 # Execução em C:
-gcc src/*.c -o escalonador
-./escalonador
+gcc src/*.c -o so-escalonador-grupo-3
+./so-escalonador-grupo-3
 
 # Utilizando Docker:
 docker build -t so-escalonador-grupo-3 .

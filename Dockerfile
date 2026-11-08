@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY /src/* .
 
-RUN gcc main.c -o escalonador
+RUN gcc processo.c main.c -o so-escalonador-grupo-3
 
-CMD ["./escalonador"]
+CMD ["./so-escalonador-grupo-3"]
