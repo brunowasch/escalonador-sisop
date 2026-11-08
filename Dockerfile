@@ -2,8 +2,8 @@ FROM gcc:latest
 
 WORKDIR /app
 
-COPY /src/* .
+COPY src/ ./src/
 
-RUN gcc processo.c main.c -o so-escalonador-grupo-3
+RUN gcc src/*.c -o so-escalonador-grupo-3
 
 CMD ["./so-escalonador-grupo-3"]
