@@ -55,15 +55,13 @@ typedef struct {
  *
  * processo: endereço do PCB que será inicializado.
  * ppid: identificador do processo pai.
- * prioridade: prioridade inicial do processo.
  * tempo_restante: tempo total de execução necessário.
  * proximo_io: dispositivo da próxima operação de E/S.
  * tempo_io: duração da próxima operação de E/S.
  */
-void criar_processo(
+int criar_processo(
     PCB *processo,
     int ppid,
-    Prioridade prioridade,
     int tempo_restante,
     DispositivoIO proximo_io,
     int tempo_io
@@ -75,6 +73,31 @@ void criar_processo(
  * processo: endereço do PCB que será apresentado.
  */
 void mostrar_processo(PCB *processo);
+
+/*
+ * Atualiza o estado de um processo.
+ *
+ * processo: ponteiro para o PCB que terá seu estado atualizado.
+ * novo_estado: novo estado a ser atribuído ao processo.
+ */
+void atualizar_estado(PCB *processo, EstadoProcesso novo_estado);
+
+/*
+ * Atualiza a prioridade de um processo.
+ *
+ * processo: ponteiro para o PCB que terá sua prioridade atualizada.
+ * nova_prioridade: nova prioridade a ser atribuída ao processo.
+ */
+void atualizar_prioridade(PCB *processo, Prioridade nova_prioridade);
+
+/*
+ * Atualiza o tempo restante de execução de um processo.
+ *
+ * processo: ponteiro para o PCB que terá seu tempo restante atualizado.
+ * tempo_executado: quantidade de tempo de CPU já utilizada pelo processo.
+ */
+void atualizar_tempo_restante(PCB *processo, int tempo_executado);
+
 
 // Indica o fim do include guard iniciado pelo #ifndef PROCESSO_H.
 #endif
