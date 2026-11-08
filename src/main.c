@@ -1,6 +1,10 @@
-#include<stdio.h>
+#include "processo.h"
 
 int main() {
-    printf("Hello, World!\n");
-    return 0;
+    // Criando os processos
+    PCB processo1, processo2;
+    criar_processo(&processo1, 0, 10, DISCO, 3); 
+    mostrar_processo(&processo1);
+    criar_processo(&processo2, 0, 3, FITA, 4);
+    mostrar_processo(&processo2);
 }
