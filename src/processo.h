@@ -41,19 +41,19 @@ typedef enum {
  * necessárias para o gerenciamento de um processo.
  */
 typedef struct {
-    int pid;                    // Identificador único do processo.
-    int ppid;                   // Identificador do processo pai.
+    int pid;                     // Identificador único do processo.
+    int ppid;                    // Identificador do processo pai.
     EstadoProcesso estado;       // Estado atual do processo.
     Prioridade prioridade;       // Prioridade atual do processo.
-    int tempo_restante;          // Tempo de CPU restante para execução.
-    DispositivoIO proximo_io;    // Próximo dispositivo de E/S.
-    int tempo_io;                // Duração da próxima operação de E/S.
+    int tempo_restante;           // Tempo de CPU restante para execução.
+    DispositivoIO proximo_io;     // Próximo dispositivo de E/S.
+    int tempo_io;                 // Duração da próxima operação de E/S.
 } PCB;
 
 /*
  * Inicializa um PCB com os dados de um novo processo.
  *
- * processo: endereço do PCB que será inicializado.
+ * processo: endereço do ponteiro para o PCB que será criado.
  * ppid: identificador do processo pai.
  * tempo_restante: tempo total de execução necessário.
  * proximo_io: dispositivo da próxima operação de E/S.
@@ -63,7 +63,7 @@ typedef struct {
  * Retorna 0 se algum parâmetro for inválido.
  */
 int criar_processo(
-    PCB *processo,
+    PCB **processo,
     int ppid,
     int tempo_restante,
     DispositivoIO proximo_io,
@@ -73,7 +73,7 @@ int criar_processo(
 /*
  * Exibe os atributos de um PCB no terminal.
  *
- * processo: endereço do PCB que será apresentado.
+ * processo: ponteiro para o PCB que será apresentado.
  */
 void mostrar_processo(PCB *processo);
 
