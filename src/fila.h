@@ -45,7 +45,7 @@ int fila_vazia(Fila *fila);
 * fila: ponteiro para a fila onde o processo será adicionado.
 * processo: ponteiro para o PCB do processo a ser adicionado.
 */
-void enfileirar(Fila *fila, PCB *processo);
+int enfileirar(Fila *fila, PCB *processo);
 
 /*
 * Remove um processo da fila.

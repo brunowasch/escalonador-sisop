@@ -9,7 +9,7 @@
  */
 Fila *criar_fila() {
     // Aloca memória para a fila
-    Fila *fila = malloc(sizeof(Fila)); 
+    Fila *fila = malloc(sizeof(Fila));
 
     // Se a alocação falhar, retorna NULL
     if (fila == NULL)
@@ -40,28 +40,29 @@ int fila_vazia(Fila *fila) {
  * fila: ponteiro para a fila onde o processo será adicionado.
  * processo: ponteiro para o PCB do processo a ser adicionado.
  */
-void enfileirar(Fila *fila, PCB *processo) {
+int enfileirar(Fila *fila, PCB *processo) {
     // Aloca memória para um novo nó da fila
-    No *no = malloc(sizeof(No));
+    No *no = malloc(sizeof(*no));
 
     // Verifica se a alocação falhou
-    if (no == NULL) 
-        return;
+    if (no == NULL)
+        return 0;
 
     // Inicializa o nó com o processo e define o próximo como NULL
     no->processo = processo;
     no->proximo = NULL;
-    
+
     // Se a fila estiver vazia, o novo nó será o início e o fim da fila
     if (fila_vazia(fila)) {
         fila->inicio = no;
         fila->fim = no;
     }
-    // Caso contrário, adiciona o nó ao final da fila e atualiza o ponteiro do fim 
+    // Caso contrário, adiciona o nó ao final da fila e atualiza o ponteiro do fim
     else {
         fila->fim->proximo = no;
         fila->fim = no;
     }
+    return 1;
 }
 
 /*
@@ -84,7 +85,7 @@ PCB *desenfileirar(Fila *fila) {
     // Libera a memória do nó removido
     free(noAux);
     // Se a fila ficar vazia após a remoção, atualiza o ponteiro do fim para NULL
-    if (fila->inicio == NULL) 
+    if (fila->inicio == NULL)
         fila->fim = NULL;
     // Retorna o ponteiro para o PCB do processo removido
     return processo;
@@ -99,7 +100,7 @@ void mostrar_fila(Fila *fila) {
     // Inicializa um ponteiro auxiliar para percorrer a fila
     No *noAux = fila->inicio;
     // Verifica se a fila está vazia e exibe uma mensagem apropriada
-    if (noAux == NULL)  {
+    if (noAux == NULL) {
         printf("A fila de processos está vazia!\n");
         return;
     }
@@ -111,10 +112,10 @@ void mostrar_fila(Fila *fila) {
 }
 
 /*
-* Libera a memória ocupada pela fila.
-*
-* fila: ponteiro para a fila a ser liberada.
-*/
+ * Libera a memória ocupada pela fila.
+ *
+ * fila: ponteiro para a fila a ser liberada.
+ */
 void liberar_fila(Fila *fila) {
     // Verifica se o ponteiro da fila é válido
     if (fila == NULL)
@@ -123,7 +124,7 @@ void liberar_fila(Fila *fila) {
     No *noAux = fila->inicio;
 
     // Percorre a fila e libera cada nó até o final
-    while(noAux != NULL) {
+    while (noAux != NULL) {
         No *proximo = noAux->proximo;
         free(noAux);
         noAux = proximo;
