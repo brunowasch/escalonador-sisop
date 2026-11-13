@@ -21,6 +21,24 @@ static int estado_valido(EstadoProcesso estado) {
 }
 
 /*
+ * Traduz a prioridade do processo para uma string.
+ *
+ * prioridade: prioridade que será traduzida.
+ *
+ * Retorna o nome da prioridade ou "DESCONHECIDA" caso inválida.
+ */
+const char *traduzir_prioridade(Prioridade prioridade) {
+    switch (prioridade) {
+        case ALTA:
+            return "ALTA";
+        case BAIXA:
+            return "BAIXA";
+        default:
+            return "DESCONHECIDA";
+    }
+}
+
+/*
  * Retorna a representação textual do dispositivo de E/S do processo.
  *
  * processo: ponteiro para o processo a ser consultado.
@@ -41,6 +59,30 @@ const char *traduzir_io(PCB *processo) {
         default:
             // Retorna mensagem de erro para valores inválidos.
             return "[ERRO] Tipo de E/S não definido corretamente.";
+    }
+}
+
+/*
+ * Traduz o estado do processo para uma string.
+ *
+ * estado: estado que será traduzido.
+ *
+ * Retorna o nome do estado ou "DESCONHECIDO" caso inválido.
+ */
+const char *traduzir_estado(EstadoProcesso estado) {
+    switch (estado) {
+        case NOVO:
+            return "NOVO";
+        case PRONTO:
+            return "PRONTO";
+        case EXECUTANDO:
+            return "EXECUTANDO";
+        case BLOQUEADO:
+            return "BLOQUEADO";
+        case FINALIZADO:
+            return "FINALIZADO";
+        default:
+            return "DESCONHECIDO";
     }
 }
 
@@ -164,12 +206,13 @@ PCB *criar_processo(
     processo->ppid = ppid;
     processo->estado = NOVO;
     processo->prioridade = ALTA;
+    processo->tempo_cpu_total = tempo_restante;
     processo->tempo_restante = tempo_restante;
     processo->tempo_cpu_ate_io = tempo_cpu_ate_io;
     processo->proximo_io = proximo_io;
     processo->tempo_io = tempo_io;
 
-    printf("[SUCESSO] Processo PID %d criado!\n", processo->pid);
+    // printf("[SUCESSO] Processo PID %d criado!\n", processo->pid);
 
     return processo;
 }
@@ -294,10 +337,13 @@ int atualizar_estado(PCB *processo, EstadoProcesso novo_estado) {
             return 0;
     }
 
+    // Armazena o estado antigo do processo
+    EstadoProcesso estado_antigo = processo->estado;
     // Atualiza o estado do processo.
     processo->estado = novo_estado;
 
-    printf("[SUCESSO] PID %d: Estado atualizado!\n", processo->pid);
+
+    // printf("[SUCESSO] PID %d: Estado atualizado: %s -> %s\n", processo->pid, traduzir_estado(estado_antigo), traduzir_estado(novo_estado));
 
     return 1;
 }
@@ -330,11 +376,11 @@ int atualizar_prioridade(PCB *processo, Prioridade nova_prioridade) {
         printf("[ERRO] Não é possível alterar a prioridade de um processo finalizado!\n");
         return 0;
     }
-
+    Prioridade prioridade_antiga = processo->prioridade;
     // Atualiza a prioridade do processo.
     processo->prioridade = nova_prioridade;
 
-    printf("[SUCESSO] PID %d: Prioridade atualizada!\n", processo->pid);
+    // printf("[SUCESSO] PID %d: Prioridade atualizada: %s -> %s\n", processo->pid, traduzir_prioridade(prioridade_antiga), traduzir_prioridade(nova_prioridade));
 
     return 1;
 }
@@ -368,10 +414,12 @@ int atualizar_tempo_restante(PCB *processo, int tempo_executado) {
         return 0;
     }
 
+    // Armazena o tempo antigo
+    int tempo_antigo = processo->tempo_restante;
     // Atualiza o tempo restante de CPU.
     processo->tempo_restante -= tempo_executado;
 
-    printf("[SUCESSO] PID %d: Tempo restante atualizado para %d!\n", processo->pid, processo->tempo_restante);
+    // printf("[SUCESSO] PID %d: Tempo restante atualizado: %d -> %d\n", processo->pid, tempo_antigo, processo->tempo_restante);
 
     return 1;
 }

@@ -101,7 +101,7 @@ void mostrar_fila(Fila *fila) {
     No *noAux = fila->inicio;
     // Verifica se a fila está vazia e exibe uma mensagem apropriada
     if (noAux == NULL) {
-        printf("A fila de processos está vazia!\n");
+        printf("[ERRO] A fila de processos está vazia!\n");
         return;
     }
     // Percorre a fila e exibe os processos até o final

@@ -1,9 +1,9 @@
-
 #ifndef ESCALONADOR_H
 #define ESCALONADOR_H
 
 #include "fila.h"
 #include "processo.h"
+#include "historico.h"
 
 /*
  * Estrutura responsável por armazenar
@@ -18,6 +18,8 @@ typedef struct {
     int tempo_simulacao;
     int processos_finalizados;
     int preempcoes;
+
+    Historico *historico;
 } Escalonador;
 
 /*

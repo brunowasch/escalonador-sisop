@@ -45,6 +45,7 @@ typedef struct {
     int ppid;                       // Identificador do processo pai.
     EstadoProcesso estado;           // Estado atual do processo.
     Prioridade prioridade;            // Prioridade atual do processo.
+    int tempo_cpu_total;             // Tempo total de CPU solicitado pelo processo.
     int tempo_restante;              // Tempo de CPU restante para execução.
     int tempo_cpu_ate_io;            // Tempo de CPU até a próxima operação de E/S.
     DispositivoIO proximo_io;         // Próximo dispositivo de E/S.
@@ -127,6 +128,24 @@ int atualizar_prioridade(PCB *processo, Prioridade nova_prioridade);
  * 0 caso ocorra algum erro.
  */
 int atualizar_tempo_restante(PCB *processo, int tempo_executado);
+
+/*
+ * Traduz o estado do processo para uma string.
+ *
+ * estado: estado que será traduzido.
+ *
+ * Retorna o nome do estado ou "DESCONHECIDO" caso inválido.
+ */
+const char *traduzir_estado(EstadoProcesso estado);
+
+/*
+ * Traduz a prioridade do processo para uma string.
+ *
+ * prioridade: prioridade que será traduzida.
+ *
+ * Retorna o nome da prioridade ou "DESCONHECIDA" caso inválida.
+ */
+const char *traduzir_prioridade(Prioridade prioridade);
 
 // Indica o fim do include guard iniciado pelo #ifndef PROCESSO_H.
 #endif

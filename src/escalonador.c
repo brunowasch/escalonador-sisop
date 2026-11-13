@@ -45,18 +45,30 @@ Escalonador *criar_escalonador(int quantum) {
         return NULL;
     }
 
+    // Inicializa os ponteiros com NULL.
+    escalonador->fila_alta = NULL;
+    escalonador->fila_baixa = NULL;
+    escalonador->fila_io = NULL;
+    escalonador->historico = NULL;
+
+    // Inicializa o histórico de eventos.
+    escalonador->historico = criar_historico();
+
+    // Verifica se o histórico foi criado corretamente.
+    if (escalonador->historico == NULL) {
+        printf("[ERRO] Falha ao criar histórico.\n");
+        liberar_escalonador(&escalonador);
+        return NULL;
+    }
+
     // Inicializa as filas do escalonador.
     escalonador->fila_alta = criar_fila();
     escalonador->fila_baixa = criar_fila();
     escalonador->fila_io = criar_fila();
 
     // Verifica se todas as filas foram criadas corretamente.
-    if (!isFilaValida(escalonador->fila_alta) ||
-        !isFilaValida(escalonador->fila_baixa) ||
-        !isFilaValida(escalonador->fila_io)) {
-
+    if (!isFilaValida(escalonador->fila_alta) || !isFilaValida(escalonador->fila_baixa) || !isFilaValida(escalonador->fila_io)) {
         printf("[ERRO] Falha ao criar uma ou mais filas.\n");
-
         liberar_escalonador(&escalonador);
         return NULL;
     }
@@ -93,6 +105,10 @@ int liberar_escalonador(Escalonador **escalonador) {
 
     if ((*escalonador)->fila_io != NULL)
         liberar_fila((*escalonador)->fila_io);
+
+    // Libera o histórico de eventos.
+    if ((*escalonador)->historico != NULL)
+        liberar_historico(&(*escalonador)->historico);
 
     // Libera a memória do escalonador.
     free(*escalonador);
@@ -146,8 +162,13 @@ int adicionar_processo(Escalonador *escalonador, PCB *processo) {
         return 0;
     }
 
-    printf("[SUCESSO] Processo %d adicionado ao escalonador.\n",
-           processo->pid);
+    // Registra a criação do processo no histórico.
+    if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_CRIACAO, "Processo criado e adicionado à fila de alta prioridade.")) {
+        printf("[ERRO] Falha ao registrar criação no histórico.\n");
+        return 0;
+    }
+
+    // printf("[SUCESSO] Processo %d adicionado ao escalonador.\n", processo->pid);
 
     return 1;
 }
@@ -191,7 +212,6 @@ PCB *selecionar_processo(Escalonador *escalonador) {
     return processo;
 }
 
-
 /*
  * Executa um processo durante seu quantum.
  *
@@ -222,8 +242,7 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
     if (processo->proximo_io != NENHUM && processo->tempo_cpu_ate_io == 0)
         io_solicitada = 1;
 
-    // Executa o processo durante o quantum,
-    // enquanto não finalizar e não solicitar E/S.
+    // Executa o processo durante o quantum, enquanto não finalizar e não solicitar E/S.
     for (int i = 0; i < escalonador->quantum && processo->tempo_restante > 0 && !io_solicitada; i++) {
         // Executa uma unidade de CPU.
         if (!atualizar_tempo_restante(processo, 1))
@@ -232,10 +251,27 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
         // Incrementa o tempo da simulação.
         escalonador->tempo_simulacao++;
 
+        // Registra o progresso acumulado da execução de CPU no histórico.
+        char descricao[128];
+        int tempo_executado = processo->tempo_cpu_total - processo->tempo_restante;
+        snprintf(
+            descricao,
+            sizeof(descricao),
+            "%d/%d unidades executadas (%d restantes).",
+            tempo_executado,
+            processo->tempo_cpu_total,
+            processo->tempo_restante
+        );
+        if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_EXECUCAO_CPU, descricao)) {
+            printf("[ERRO] Falha ao registrar execução de CPU no histórico.\n");
+            return 0;
+        }
+
         // Verifica se o processo possui uma operação de E/S.
         if (processo->proximo_io != NENHUM) {
             // Desconta uma unidade de CPU até a E/S.
             processo->tempo_cpu_ate_io--;
+
             // Verifica se chegou o momento da E/S.
             if (processo->tempo_cpu_ate_io == 0)
                 io_solicitada = 1;
@@ -256,9 +292,15 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
             return 0;
         }
 
-        printf("[INFO] PID %d: Processo bloqueado para E/S -> fila E/S.\n", processo->pid);
-        printf("[INFO] Sendo solicitado: %s\n", traduzir_io(processo));
-        
+        // Registra o bloqueio no histórico.
+        if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_BLOQUEIO_IO, "Processo bloqueado para E/S.")) {
+            printf("[ERRO] Falha ao registrar bloqueio de E/S no histórico.\n");
+            return 0;
+        }
+
+        // printf("[INFO] PID %d: Processo bloqueado para E/S -> fila E/S.\n", processo->pid);
+        // printf("[INFO] Sendo solicitado: %s\n", traduzir_io(processo));
+
         if (!gerenciar_io(escalonador, processo)) {
             printf("[ERRO] Falha ao gerenciar E/S.\n");
             return 0;
@@ -270,9 +312,17 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
             printf("[ERRO] Falha ao finalizar processo.\n");
             return 0;
         }
+
         // Incrementa o contador de processos finalizados.
         escalonador->processos_finalizados++;
-        printf("[INFO] PID %d: Processo finalizado.\n", processo->pid);
+
+        // Registra a finalização no histórico.
+        if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_FINALIZACAO, "Processo finalizado.")) {
+            printf("[ERRO] Falha ao registrar finalização no histórico.\n");
+            return 0;
+        }
+
+        // printf("[INFO] PID %d: Processo finalizado.\n", processo->pid);
 
     } else {
         // Atualiza o estado para PRONTO.
@@ -291,8 +341,16 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
 
         // Incrementa o contador de preempções.
         escalonador->preempcoes++;
-        printf("[INFO] PID %d: Processo sofreu preempção!\n", processo->pid);
+
+        // Registra a preempção no histórico.
+        if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_PREEMPCAO, "Processo sofreu preempção e foi movido para baixa prioridade.")) {
+            printf("[ERRO] Falha ao registrar preempção no histórico.\n");
+            return 0;
+        }
+
+        // printf("[INFO] PID %d: Processo sofreu preempção!\n", processo->pid);
     }
+
     return 1;
 }
 
@@ -321,15 +379,13 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
  * 0: erro na validação ou no gerenciamento da operação.
  */
 int gerenciar_io(Escalonador *escalonador, PCB *processo) {
-
     // Verifica se os ponteiros recebidos são válidos.
     if (escalonador == NULL || processo == NULL) {
         printf("[ERRO] Escalonador ou processo inválido.\n");
         return 0;
     }
 
-    // Verifica se o processo está bloqueado e possui uma operação
-    // de E/S válida, com tempo de execução positivo.
+    // Verifica se o processo está bloqueado e possui uma operação de E/S válida, com tempo de execução positivo.
     if (processo->estado != BLOQUEADO || processo->tempo_io <= 0 || (processo->proximo_io != DISCO && processo->proximo_io != FITA && processo->proximo_io != IMPRESSORA)) {
         printf("[ERRO] Processo não possui E/S válida.\n");
         return 0;
@@ -357,6 +413,12 @@ int gerenciar_io(Escalonador *escalonador, PCB *processo) {
     for (int i = 0; i < j; i++) {
         processo->tempo_io -= 1;
         escalonador->tempo_simulacao++;
+    }
+
+    // Registra a conclusão da operação de E/S no histórico.
+    if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_CONCLUSAO_IO, "Operação de E/S concluída.")) {
+        printf("[ERRO] Falha ao registrar conclusão de E/S no histórico.\n");
+        return 0;
     }
 
     // Após a conclusão da E/S em disco, o processo retorna à fila de baixa prioridade.
@@ -402,5 +464,3 @@ int gerenciar_io(Escalonador *escalonador, PCB *processo) {
     // Indica que a operação de E/S foi concluída com sucesso.
     return 1;
 }
-
-
