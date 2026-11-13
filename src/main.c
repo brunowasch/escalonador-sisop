@@ -6,7 +6,7 @@
 
 int main() {
 
-    // Cria o escalonador com quantum de 3 unidades de tempo.
+    // Cria o escalonador com o quantum configurado acima.
     Escalonador *escalonador = criar_escalonador(3);
 
     // Verifica se o escalonador foi criado corretamente.
@@ -14,7 +14,6 @@ int main() {
         printf("[ERRO] Falha ao criar escalonador.\n");
         return 1;
     }
-
     int total_processos = 4;
     // Cria os processos de teste.
     PCB *p1 = criar_processo(0, 8, 3, DISCO, 2);
@@ -53,13 +52,15 @@ int main() {
             break;
         }
     }
+
+    mostrar_historico(escalonador->historico);  
+
     printf("\n[FIM] Processos Finalizados: %d/%d | Tempo total: %d\n", escalonador->processos_finalizados, total_processos, escalonador->tempo_simulacao);
     // Exibe os resultados da simulação.
     printf("\n========== RESULTADOS ==========\n");
     printf("Tempo total: %d\n", escalonador->tempo_simulacao);
     printf("Processos finalizados: %d\n", escalonador->processos_finalizados);
     printf("Preempções: %d\n", escalonador->preempcoes);
-
     // Libera os recursos do escalonador.
     liberar_escalonador(&escalonador);
 
