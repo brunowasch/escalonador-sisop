@@ -12,7 +12,7 @@ typedef enum {
     PRONTO,      // Processo aguardando execução na fila.
     EXECUTANDO,  // Processo atualmente em execução.
     BLOQUEADO,   // Processo aguardando uma operação de E/S.
-    FINALIZADO  // Processo que concluiu sua execução.
+    FINALIZADO   // Processo que concluiu sua execução.
 } EstadoProcesso;
 
 /*
@@ -41,31 +41,42 @@ typedef enum {
  * necessárias para o gerenciamento de um processo.
  */
 typedef struct {
-    int pid;                     // Identificador único do processo.
-    int ppid;                    // Identificador do processo pai.
-    EstadoProcesso estado;       // Estado atual do processo.
-    Prioridade prioridade;       // Prioridade atual do processo.
-    int tempo_restante;           // Tempo de CPU restante para execução.
-    DispositivoIO proximo_io;     // Próximo dispositivo de E/S.
-    int tempo_io;                 // Duração da próxima operação de E/S.
+    int pid;                        // Identificador único do processo.
+    int ppid;                       // Identificador do processo pai.
+    EstadoProcesso estado;           // Estado atual do processo.
+    Prioridade prioridade;            // Prioridade atual do processo.
+    int tempo_restante;              // Tempo de CPU restante para execução.
+    int tempo_cpu_ate_io;            // Tempo de CPU até a próxima operação de E/S.
+    DispositivoIO proximo_io;         // Próximo dispositivo de E/S.
+    int tempo_io;                    // Duração da próxima operação de E/S.
 } PCB;
+
+/*
+ * Retorna a representação textual do dispositivo de E/S do processo.
+ *
+ * processo: ponteiro para o processo a ser consultado.
+ *
+ * Retorna uma string correspondente ao dispositivo de E/S.
+ */
+const char *traduzir_io(PCB *processo);
 
 /*
  * Inicializa um PCB com os dados de um novo processo.
  *
- * processo: endereço do ponteiro para o PCB que será criado.
  * ppid: identificador do processo pai.
  * tempo_restante: tempo total de execução necessário.
+ * tempo_cpu_ate_io: tempo de CPU até a próxima solicitação de E/S.
  * proximo_io: dispositivo da próxima operação de E/S.
  * tempo_io: duração da próxima operação de E/S.
  *
- * Retorna 1 se o processo foi criado com sucesso.
- * Retorna 0 se algum parâmetro for inválido.
+ * Retorna:
+ * O ponteiro para o PCB criado.
+ * NULL se algum parâmetro for inválido ou ocorrer falha na alocação.
  */
-int criar_processo(
-    PCB **processo,
+PCB *criar_processo(
     int ppid,
     int tempo_restante,
+    int tempo_cpu_ate_io,
     DispositivoIO proximo_io,
     int tempo_io
 );
@@ -74,32 +85,48 @@ int criar_processo(
  * Exibe os atributos de um PCB no terminal.
  *
  * processo: ponteiro para o PCB que será apresentado.
+ *
+ * Retorna:
+ * 1 se as informações forem exibidas.
+ * 0 caso o processo seja inválido.
  */
-void mostrar_processo(PCB *processo);
+int mostrar_processo(PCB *processo);
 
 /*
  * Atualiza o estado de um processo.
  *
  * processo: ponteiro para o PCB que terá seu estado atualizado.
  * novo_estado: novo estado a ser atribuído ao processo.
+ *
+ * Retorna:
+ * 1 se o estado for atualizado.
+ * 0 caso ocorra algum erro ou transição inválida.
  */
-void atualizar_estado(PCB *processo, EstadoProcesso novo_estado);
+int atualizar_estado(PCB *processo, EstadoProcesso novo_estado);
 
 /*
  * Atualiza a prioridade de um processo.
  *
  * processo: ponteiro para o PCB que terá sua prioridade atualizada.
  * nova_prioridade: nova prioridade a ser atribuída ao processo.
+ *
+ * Retorna:
+ * 1 se a prioridade for atualizada.
+ * 0 caso ocorra algum erro.
  */
-void atualizar_prioridade(PCB *processo, Prioridade nova_prioridade);
+int atualizar_prioridade(PCB *processo, Prioridade nova_prioridade);
 
 /*
  * Atualiza o tempo restante de execução de um processo.
  *
  * processo: ponteiro para o PCB que terá seu tempo restante atualizado.
  * tempo_executado: quantidade de tempo de CPU já utilizada pelo processo.
+ *
+ * Retorna:
+ * 1 se o tempo restante for atualizado.
+ * 0 caso ocorra algum erro.
  */
-void atualizar_tempo_restante(PCB *processo, int tempo_executado);
+int atualizar_tempo_restante(PCB *processo, int tempo_executado);
 
 // Indica o fim do include guard iniciado pelo #ifndef PROCESSO_H.
 #endif
