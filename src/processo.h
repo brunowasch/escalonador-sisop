@@ -50,6 +50,12 @@ typedef struct {
     int tempo_cpu_ate_io;            // Tempo de CPU até a próxima operação de E/S.
     DispositivoIO proximo_io;         // Próximo dispositivo de E/S.
     int tempo_io;                    // Duração da próxima operação de E/S.
+    int tempo_chegada;                // Instante em que o processo entrou no escalonador.
+    int tempo_finalizacao;            // Instante em que o processo foi finalizado.
+    int tempo_io_total;               // Soma do tempo gasto em operações de E/S.
+    int quantidade_io_disco;          // Número de operações de E/S em disco concluídas.
+    int quantidade_io_fita;           // Número de operações de E/S em fita concluídas.
+    int quantidade_io_impressora;     // Número de operações de E/S em impressora concluídas.
 } PCB;
 
 /*

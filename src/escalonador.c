@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -147,6 +146,9 @@ int adicionar_processo(Escalonador *escalonador, PCB *processo) {
         printf("[ERRO] Processo não está no estado NOVO.\n");
         return 0;
     }
+
+    // Registra a chegada para calcular o turnaround após a finalização.
+    processo->tempo_chegada = escalonador->tempo_simulacao;
 
     // Define a prioridade inicial como ALTA.
     if (!atualizar_prioridade(processo, ALTA))
@@ -315,6 +317,8 @@ int executar_processo(Escalonador *escalonador, PCB *processo) {
 
         // Incrementa o contador de processos finalizados.
         escalonador->processos_finalizados++;
+        // Guarda o instante de término para calcular turnaround e espera.
+        processo->tempo_finalizacao = escalonador->tempo_simulacao;
 
         // Registra a finalização no histórico.
         if (!registrar_evento(escalonador->historico, escalonador->tempo_simulacao, processo->pid, EVENTO_FINALIZACAO, "Processo finalizado.")) {
@@ -408,6 +412,14 @@ int gerenciar_io(Escalonador *escalonador, PCB *processo) {
 
     // Armazena o tempo total da operação de E/S.
     int j = processo->tempo_io;
+    // Acumula duração e quantidade por dispositivo para o resumo final.
+    processo->tempo_io_total += j;
+    if (processo->proximo_io == DISCO)
+        processo->quantidade_io_disco++;
+    else if (processo->proximo_io == FITA)
+        processo->quantidade_io_fita++;
+    else if (processo->proximo_io == IMPRESSORA)
+        processo->quantidade_io_impressora++;
 
     // Simula a execução da operação de E/S. Cada iteração representa uma unidade de tempo.
     for (int i = 0; i < j; i++) {

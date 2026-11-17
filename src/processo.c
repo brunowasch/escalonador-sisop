@@ -211,6 +211,12 @@ PCB *criar_processo(
     processo->tempo_cpu_ate_io = tempo_cpu_ate_io;
     processo->proximo_io = proximo_io;
     processo->tempo_io = tempo_io;
+    processo->tempo_chegada = 0;
+    processo->tempo_finalizacao = 0;
+    processo->tempo_io_total = 0;
+    processo->quantidade_io_disco = 0;
+    processo->quantidade_io_fita = 0;
+    processo->quantidade_io_impressora = 0;
 
     // printf("[SUCESSO] Processo PID %d criado!\n", processo->pid);
 
