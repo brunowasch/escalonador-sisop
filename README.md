@@ -62,4 +62,4 @@ As médias consideram apenas processos finalizados. Turnaround é o tempo entre 
 
 ## Relatório
 
-O relatório do grupo será incluído no repositório separadamente, explicando as escolhas do algoritmo, as premissas e as simplificações descritas aqui.
+O relatório do grupo está incluído no repositório separadamente, explicando as escolhas do algoritmo, as premissas e as simplificações descritas aqui.
